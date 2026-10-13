@@ -5,7 +5,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 
 list() {
   cat <<'USAGE'
-사용법: ./ai.sh <작업종류> "주제" [-f 참고파일 ...]
+사용법: ./ai.sh <작업종류> "주제" [-f 참고파일] [-i 사진 또는 사진폴더 ...]
 
 작업종류:
   youtube   유튜브 영상 대본·편집계획·제목·썸네일
@@ -18,6 +18,7 @@ list() {
 
 예시:
   ./ai.sh youtube "제주 2박3일 브이로그" -f 촬영본_자막.txt
+  ./ai.sh business "티셔츠 사업성 분석" -i ~/Desktop/티셔츠사진
   DRY_RUN=1 ./ai.sh travel "오사카 3박4일"   # AI 호출 없이 흐름만 점검
 USAGE
 }

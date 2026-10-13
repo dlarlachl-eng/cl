@@ -20,13 +20,25 @@ die() { printf '\033[1;31m✖ %s\033[0m\n' "$*" >&2; exit 1; }
 
 has() { command -v "$1" >/dev/null 2>&1; }
 
-_call_claude() { "$CLAUDE_CMD" -p "$1"; }
+# 사진(-i)이 있으면 Claude는 파일 읽기 도구로, Codex는 --image 로 직접 봄
+IMAGES=()
+_call_claude() {
+  if [[ ${#IMAGES[@]} -gt 0 ]]; then
+    # --allowedTools, --add-dir 는 뒤의 값을 여러 개 받으므로 프롬프트를 먼저 씀
+    "$CLAUDE_CMD" -p "$1" --allowedTools Read --add-dir "$OUT_DIR"
+  else
+    "$CLAUDE_CMD" -p "$1"
+  fi
+}
 _call_gemini() { "$GEMINI_CMD" -p "$1"; }  # agy, gemini 모두 -p 로 한 번 실행
 _call_gpt() {
   local out
   out="$(mktemp)"
   # codex exec 는 진행 로그를 많이 출력하므로 마지막 답변만 파일로 받음
-  "$GPT_CMD" exec --skip-git-repo-check --output-last-message "$out" "$1" >/dev/null
+  local img args=()
+  for img in ${IMAGES[@]+"${IMAGES[@]}"}; do args+=("--image=$img"); done
+  # 프롬프트를 사진 옵션보다 먼저 써야 사진 경로로 잘못 읽히지 않음
+  "$GPT_CMD" exec --skip-git-repo-check --output-last-message "$out" "$1" ${args[@]+"${args[@]}"} >/dev/null
   cat "$out"
   rm -f "$out"
 }
@@ -74,12 +86,18 @@ step() {
 # 결과: TOPIC, REF(참고자료 텍스트), OUT_DIR
 parse_args() {
   local pipeline="$1"; shift
-  local files=()
+  local files=() images=()
   PIPELINE="$pipeline"
   TOPIC=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -f|--file) [[ $# -ge 2 ]] || die "-f 뒤에 파일 경로가 필요합니다"; files+=("$2"); shift 2 ;;
+      -i|--image)
+        # -i 뒤에 사진 여러 장이나 폴더를 이어서 쓸 수 있음
+        shift
+        [[ $# -gt 0 ]] || die "-i 뒤에 사진 파일이나 폴더가 필요합니다"
+        while [[ $# -gt 0 ]] && { [[ -d "$1" ]] || is_image "$1"; }; do images+=("$1"); shift; done
+        ;;
       -h|--help) usage; exit 0 ;;
       *) TOPIC="${TOPIC:+$TOPIC }$1"; shift ;;
     esac
@@ -100,6 +118,44 @@ parse_args() {
   OUT_DIR="$root/output/$(date +%Y%m%d_%H%M%S)_${pipeline}_${slug}"
   mkdir -p "$OUT_DIR"
   printf '%s\n' "$TOPIC" > "$OUT_DIR/0_주제.txt"
+
+  for f in ${images[@]+"${images[@]}"}; do add_image "$f"; done
+  [[ ${#IMAGES[@]} -gt 0 ]] && describe_images
+  return 0
+}
+
+is_image() { [[ -f "$1" ]] && [[ "$(printf '%s' "$1" | tr 'A-Z' 'a-z')" =~ \.(jpe?g|png|webp|gif|heic)$ ]]; }
+
+# 사진을 결과 폴더로 복사. Mac이면 HEIC → JPG 변환하고 긴 변을 1600px로 줄임
+add_image() {
+  local src="$1" f dest
+  if [[ -d "$src" ]]; then
+    for f in "$src"/*; do is_image "$f" && add_image "$f"; done
+    return 0
+  fi
+  is_image "$src" || die "사진 파일이 아닙니다: $src"
+  mkdir -p "$OUT_DIR/사진"
+  dest="$OUT_DIR/사진/$(( ${#IMAGES[@]} + 1 ))_$(basename "${src%.*}").jpg"
+  if has sips; then
+    sips -s format jpeg -Z 1600 "$src" --out "$dest" >/dev/null 2>&1 || cp "$src" "$dest"
+  else
+    dest="${dest%.jpg}.${src##*.}"
+    cp "$src" "$dest"
+  fi
+  IMAGES+=("$dest")
+}
+
+# Claude가 사진을 직접 보고 글로 정리 → 모든 AI가 참고자료로 받음
+describe_images() {
+  local list="" img desc
+  for img in "${IMAGES[@]}"; do list+="- $img"$'\n'; done
+  log "사진 ${#IMAGES[@]}장을 Claude가 직접 보고 정리합니다"
+  desc=$(step 0 claude 사진분석 "아래 사진 파일들을 Read 도구로 하나씩 직접 열어서 보고, 주제와 관련된 내용을 자세히 정리해줘.
+주제: $TOPIC
+$list
+정리할 것: 사진마다 보이는 것(제품, 디자인, 색상, 글자, 분위기, 사람·장소), 품질이나 완성도에서 눈에 띄는 점, 주제와 관련해 중요한 관찰.
+사진에 없는 내용은 추측하지 말고, 추측이 필요하면 '추정'이라고 표시해줘.")
+  REF+=$'\n\n'"[첨부 사진 분석 (Claude가 사진 ${#IMAGES[@]}장을 직접 보고 정리)]"$'\n'"$desc"
 }
 
 # 내 정보(profile.md)를 모든 프롬프트 앞에 붙임
