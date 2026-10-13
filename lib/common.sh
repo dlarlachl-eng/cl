@@ -87,14 +87,15 @@ parse_args() {
 
   REF=""
   local f
-  for f in "${files[@]}"; do
+  for f in ${files[@]+"${files[@]}"}; do
     [[ -f "$f" ]] || die "파일이 없습니다: $f"
     REF+=$'\n\n'"[참고자료: $(basename "$f")]"$'\n'"$(cat "$f")"
   done
 
   local root slug
   root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-  slug="$(printf '%s' "$TOPIC" | tr -s ' /' '__' | cut -c1-40)"
+  slug="$(printf '%s' "$TOPIC" | tr -s ' /' '__')"
+  slug="${slug:0:40}"
   OUT_DIR="$root/output/$(date +%Y%m%d_%H%M%S)_${pipeline}_${slug}"
   mkdir -p "$OUT_DIR"
   printf '%s\n' "$TOPIC" > "$OUT_DIR/0_주제.txt"
