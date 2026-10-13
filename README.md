@@ -4,7 +4,7 @@
 구독 계정으로 로그인해서 쓰기 때문에 API 요금이 따로 나가지 않습니다 (각 플랜의 사용량 한도 안에서).
 
 ```bash
-./ai.sh youtube "제주 2박3일 브이로그"
+ai youtube "제주 2박3일 브이로그"
 ```
 
 ## 역할 분담
@@ -24,36 +24,46 @@
 ## 설치 (처음 한 번)
 
 1. [Node.js](https://nodejs.org) 설치 (LTS 버전)
-2. 세 도구 설치
+2. 세 AI 도구 설치 (Mac에서 권한 오류가 나면 아래 '문제 해결' 참고)
    ```bash
-   npm install -g @anthropic-ai/claude-code   # Claude Code
-   npm install -g @openai/codex               # Codex CLI (ChatGPT)
-   npm install -g @google/gemini-cli          # Gemini CLI
+   npm install -g @anthropic-ai/claude-code @openai/codex
+   curl -fsSL https://antigravity.google/cli/install.sh | bash
    ```
-3. 각각 한 번씩 실행해서 **구독 계정으로 로그인**
+   > Gemini CLI(`gemini`)는 2026년 6월 18일부터 개인 구독(Google AI Pro/Ultra) 로그인을 받지 않아서, 대신 Antigravity CLI(`agy`)를 씁니다.
+3. 각각 한 번씩 실행해서 **구독 계정으로 로그인**한 뒤 빠져나오기
    ```bash
-   claude    # Claude 계정으로 로그인
-   codex     # "Sign in with ChatGPT" 선택
-   gemini    # "Login with Google" 선택
+   claude    # Claude 계정으로 로그인 → /exit
+   codex     # "Sign in with ChatGPT" → Ctrl+C
+   agy       # Google OAuth → Ctrl+C
    ```
-4. 이 폴더에서 설치 확인
+4. 이 도구 받기 + `ai` 단축 명령 등록
    ```bash
-   ./ai.sh check
+   git clone https://github.com/dlarlachl-eng/cl.git ~/ai
+   echo 'alias ai="bash ~/ai/ai.sh"' >> ~/.zshrc && source ~/.zshrc
+   ai check
    ```
 
-> 설치 명령이나 로그인 방식은 바뀔 수 있습니다. 문제가 생기면 각 공식 문서를 확인하세요.
-> 세 개 중 하나가 없어도 동작합니다. 없는 AI의 단계는 설치된 다른 AI가 대신 처리합니다.
+### 업데이트
+```bash
+ai update
+```
+`profile.md`, `notion.env`, `output/`은 업데이트해도 그대로 남습니다.
 
-Windows 사용자는 **WSL** 또는 **Git Bash**에서 실행하세요.
+### 문제 해결: npm 설치 권한 오류 (Mac)
+```bash
+mkdir -p ~/.npm-global && npm config set prefix ~/.npm-global
+echo 'export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
+```
+그다음 2번을 다시 실행하세요.
 
 ## 사용법
 
 ```bash
-./ai.sh youtube  "아이폰 17 3주 사용 후기"
-./ai.sh insta    "홈카페 라떼아트 3단계"
-./ai.sh business "반려견 수제간식 구독 서비스"
-./ai.sh travel   "도쿄 3박4일, 11월, 2인, 예산 150만원, 맛집 위주"
-./ai.sh design   "카페 로고, 따뜻하고 미니멀하게"
+ai youtube  "아이폰 17 3주 사용 후기"
+ai insta    "홈카페 라떼아트 3단계"
+ai business "반려견 수제간식 구독 서비스"
+ai travel   "도쿄 3박4일, 11월, 2인, 예산 150만원, 맛집 위주"
+ai design   "카페 로고, 따뜻하고 미니멀하게"
 ```
 
 ### 참고 파일 넣기 (`-f`)
@@ -61,13 +71,28 @@ Windows 사용자는 **WSL** 또는 **Git Bash**에서 실행하세요.
 
 ```bash
 # 촬영본 자막을 넣으면 잘라낼 부분과 순서 변경을 타임코드로 제안
-./ai.sh youtube "제주 브이로그" -f 촬영본_자막.txt
+ai youtube "제주 브이로그" -f 촬영본_자막.txt
 
 # 항공·숙소 정보를 넣으면 그 일정에 맞춰 계획
-./ai.sh travel "오사카 3박4일" -f 항공숙소.txt
+ai travel "오사카 3박4일" -f 항공숙소.txt
 ```
 
 **영상 편집 팁**: 프리미어 프로나 캡컷의 자동 자막 기능으로 촬영본 자막(.srt 또는 .txt)을 뽑아 `-f`로 넣으세요. 그러면 AI가 실제 촬영 내용을 보고 컷 편집 계획을 짭니다.
+
+### 사진 넣기 (`-i`)
+사진 파일 여러 장이나 사진이 든 폴더를 넣을 수 있습니다. 아이폰 사진(HEIC)도 자동으로 변환됩니다.
+
+```bash
+# 폴더째로
+ai business "티셔츠 사업성 분석" -i ~/Desktop/티셔츠사진
+
+# 파일 여러 장
+ai insta "토리네 홍보 릴스" -i 가게1.jpg 가게2.jpg
+```
+
+- 맨 처음 **Claude가 사진을 직접 보고** 자세히 정리합니다 (`0_사진분석.md`). 이 정리는 모든 AI에게 전달됩니다.
+- **GPT도 검토 단계에서 사진을 직접** 봅니다.
+- Gemini(agy)는 사진 대신 Claude의 정리를 받습니다.
 
 ### 내 정보 등록 (추천)
 `profile.example.md`를 `profile.md`로 복사하고 내 채널, 톤, 쓰는 도구를 적어 두세요. 모든 요청 앞에 자동으로 붙어서, 매번 내 상황을 설명할 필요가 없습니다.
@@ -75,6 +100,25 @@ Windows 사용자는 **WSL** 또는 **Git Bash**에서 실행하세요.
 ```bash
 cp profile.example.md profile.md
 ```
+
+## 노션 자동 저장 (선택)
+
+설정해 두면 실행이 끝날 때마다 최종본이 노션 페이지로 저장됩니다. 중간 과정은 맨 아래에 접기(토글)로 들어가요. 핸드폰 노션 앱에서 바로 볼 수 있어요.
+
+1. https://www.notion.so/my-integrations 에서 **새 통합(New integration)** 만들기
+   - 이름: `AI 파이프라인` (아무거나), 종류: **내부(Internal)**
+   - 만든 뒤 나오는 **내부 통합 시크릿**(`ntn_`로 시작)을 복사
+2. 노션에서 결과를 모을 페이지 만들기 (예: `AI 결과물`)
+   - 페이지 오른쪽 위 `•••` → **연결(Connections)** → 방금 만든 `AI 파이프라인` 추가
+   - 다시 `•••` → **링크 복사**
+3. 터미널에서 실행하고, 물어보는 대로 시크릿과 링크를 붙여넣기
+   ```bash
+   ai notion
+   ```
+   `✔ 연결 성공`이 나오면 끝이에요.
+
+시크릿은 이 폴더의 `notion.env`에만 저장되고 GitHub에는 올라가지 않습니다.
+노션 저장이 실패해도 결과 파일은 `output/`에 그대로 남습니다.
 
 ## 결과물
 
@@ -96,7 +140,7 @@ output/20261013_150602_youtube_제주_브이로그/
 - **AI가 직접 영상을 편집하거나 이미지를 만들지는 않습니다.** 대본, 편집 계획표, 이미지 생성 프롬프트까지 만들어 주고, 실제 편집과 이미지 생성은 편집 프로그램이나 ChatGPT·Gemini 앱에서 하세요.
 - 여행 정보(영업시간, 가격)와 시장 수치는 틀릴 수 있으니 최종본의 "확인할 것" 목록을 꼭 확인하세요.
 - 한 번 실행할 때 AI를 3~4번 호출합니다. 구독 플랜의 사용량 한도를 참고하세요.
-- `DRY_RUN=1 ./ai.sh travel "테스트"` 로 실행하면 AI를 부르지 않고 흐름만 점검합니다.
+- `DRY_RUN=1 ai travel "테스트"` 로 실행하면 AI를 부르지 않고 흐름만 점검합니다.
 
 ## 나만의 작업 추가하기
 
