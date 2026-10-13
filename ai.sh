@@ -26,9 +26,12 @@ kind="$1"; shift
 
 case "$kind" in
   check)
-    for c in claude codex gemini; do
+    for c in claude codex; do
       if command -v "$c" >/dev/null; then echo "✔ $c"; else echo "✖ $c (설치 필요)"; fi
-    done ;;
+    done
+    if command -v agy >/dev/null; then echo "✔ agy (Gemini)"
+    elif command -v gemini >/dev/null; then echo "△ gemini (개인 구독은 막힘, agy 설치 권장)"
+    else echo "✖ agy (Gemini, 설치 필요)"; fi ;;
   youtube|insta|business|travel|design) exec bash "$DIR/pipelines/$kind.sh" "$@" ;;
   -h|--help|help) list ;;
   *) echo "알 수 없는 작업종류: $kind"; list; exit 1 ;;

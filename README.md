@@ -28,13 +28,15 @@
    ```bash
    npm install -g @anthropic-ai/claude-code   # Claude Code
    npm install -g @openai/codex               # Codex CLI (ChatGPT)
-   npm install -g @google/gemini-cli          # Gemini CLI
+   curl -fsSL https://antigravity.google/cli/install.sh | bash   # Antigravity CLI (Gemini)
    ```
+   > Gemini CLI(`gemini`)는 2026년 6월 18일부터 개인 구독(Google AI Pro/Ultra) 로그인을 받지 않습니다.
+   > 대신 Antigravity CLI(`agy`)를 설치하세요. `agy`가 있으면 자동으로 그쪽을 씁니다.
 3. 각각 한 번씩 실행해서 **구독 계정으로 로그인**
    ```bash
    claude    # Claude 계정으로 로그인
    codex     # "Sign in with ChatGPT" 선택
-   gemini    # "Login with Google" 선택
+   agy       # 브라우저에서 구글 계정으로 로그인
    ```
 4. 이 폴더에서 설치 확인
    ```bash

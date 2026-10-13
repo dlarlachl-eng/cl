@@ -6,7 +6,10 @@ set -euo pipefail
 # 명령어 이름은 환경변수로 바꿀 수 있음
 CLAUDE_CMD="${CLAUDE_CMD:-claude}"
 GPT_CMD="${GPT_CMD:-codex}"
-GEMINI_CMD="${GEMINI_CMD:-gemini}"
+# Gemini: 개인 구독은 Antigravity CLI(agy)로 이전됨. 없으면 예전 gemini CLI 사용
+if [[ -z "${GEMINI_CMD:-}" ]]; then
+  if command -v agy >/dev/null 2>&1; then GEMINI_CMD=agy; else GEMINI_CMD=gemini; fi
+fi
 
 # DRY_RUN=1 이면 실제 AI를 부르지 않고 흐름만 점검
 DRY_RUN="${DRY_RUN:-0}"
@@ -18,7 +21,7 @@ die() { printf '\033[1;31m✖ %s\033[0m\n' "$*" >&2; exit 1; }
 has() { command -v "$1" >/dev/null 2>&1; }
 
 _call_claude() { "$CLAUDE_CMD" -p "$1"; }
-_call_gemini() { "$GEMINI_CMD" -p "$1"; }
+_call_gemini() { "$GEMINI_CMD" -p "$1"; }  # agy, gemini 모두 -p 로 한 번 실행
 _call_gpt() {
   local out
   out="$(mktemp)"
@@ -37,21 +40,25 @@ _cmd_of() {
 }
 
 # 사용법: ask <claude|gpt|gemini> "프롬프트"
-# 원하는 AI가 설치돼 있지 않으면 설치된 다른 AI로 대신 실행
+# 원하는 AI가 없거나 빈 답을 내면 설치된 다른 AI로 대신 실행
 ask() {
-  local want="$1" prompt="$2" who
+  local want="$1" prompt="$2" who out tried=" "
   if [[ "$DRY_RUN" == "1" ]]; then
     printf '[DRY_RUN %s 응답]\n프롬프트 앞부분: %s\n' "$want" "${prompt:0:120}"
     return
   fi
   for who in "$want" claude gpt gemini; do
-    if has "$(_cmd_of "$who")"; then
-      [[ "$who" != "$want" ]] && warn "$want 이(가) 없어서 $who 로 대신 실행합니다"
-      "_call_$who" "$prompt"
+    [[ "$tried" == *" $who "* ]] && continue
+    tried+="$who "
+    has "$(_cmd_of "$who")" || continue
+    [[ "$who" != "$want" ]] && warn "$want 대신 $who 로 실행합니다"
+    if out="$("_call_$who" "$prompt")" && [[ -n "${out//[[:space:]]/}" ]]; then
+      printf '%s\n' "$out"
       return
     fi
+    warn "$who 실행이 실패했거나 빈 답을 냈습니다"
   done
-  die "claude, codex, gemini 중 설치된 도구가 없습니다. README의 설치 방법을 확인하세요."
+  die "답을 받은 AI가 없습니다. ./ai.sh check 와 각 도구 로그인을 확인하세요."
 }
 
 # 사용법: step 번호 AI 파일이름 "프롬프트"  → 결과를 $OUT_DIR 에 저장하고 내용을 반환
