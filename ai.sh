@@ -14,6 +14,7 @@ list() {
   travel    여행 일정표 (현지정보 → 일정 → 점검 → 최종)
   design    디자인 브리프 + 이미지 생성 프롬프트
   check     설치된 AI 도구 확인
+  notion    노션 자동 저장 설정 (처음 한 번)
 
 예시:
   ./ai.sh youtube "제주 2박3일 브이로그" -f 촬영본_자막.txt
@@ -32,6 +33,7 @@ case "$kind" in
     if command -v agy >/dev/null; then echo "✔ agy (Gemini)"
     elif command -v gemini >/dev/null; then echo "△ gemini (개인 구독은 막힘, agy 설치 권장)"
     else echo "✖ agy (Gemini, 설치 필요)"; fi ;;
+  notion) exec node "$DIR/lib/notion.mjs" setup ;;
   youtube|insta|business|travel|design) exec bash "$DIR/pipelines/$kind.sh" "$@" ;;
   -h|--help|help) list ;;
   *) echo "알 수 없는 작업종류: $kind"; list; exit 1 ;;

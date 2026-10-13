@@ -75,6 +75,7 @@ step() {
 parse_args() {
   local pipeline="$1"; shift
   local files=()
+  PIPELINE="$pipeline"
   TOPIC=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -113,4 +114,10 @@ profile() {
 done_msg() {
   log "완료! 결과 폴더: $OUT_DIR"
   log "최종본: $OUT_DIR/$1"
+  # 노션 설정(./ai.sh notion)을 했으면 최종본을 노션에도 저장
+  local root
+  root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+  if [[ "$DRY_RUN" != "1" && ( -f "$root/notion.env" || -n "${NOTION_TOKEN:-}" ) ]] && has node; then
+    node "$root/lib/notion.mjs" upload "$PIPELINE" "$OUT_DIR" "$OUT_DIR/$1" || true
+  fi
 }
