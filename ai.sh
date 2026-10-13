@@ -29,7 +29,7 @@ case "$kind" in
     for c in claude codex gemini; do
       if command -v "$c" >/dev/null; then echo "✔ $c"; else echo "✖ $c (설치 필요)"; fi
     done ;;
-  youtube|insta|business|travel|design) exec "$DIR/pipelines/$kind.sh" "$@" ;;
+  youtube|insta|business|travel|design) exec bash "$DIR/pipelines/$kind.sh" "$@" ;;
   -h|--help|help) list ;;
   *) echo "알 수 없는 작업종류: $kind"; list; exit 1 ;;
 esac
