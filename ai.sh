@@ -13,6 +13,7 @@ list() {
   business  사업기획서 (시장조사 → 기획 → 반박 → 보완)
   travel    여행 일정표 (현지정보 → 일정 → 점검 → 최종)
   design    디자인 브리프 + 이미지 생성 프롬프트
+  meeting   AI 직원 회의실 (브라우저에서 토론 → 후보 정리 → 결론)
   check     설치된 AI 도구 확인
   notion    노션 자동 저장 설정 (처음 한 번)
   update    최신 버전으로 업데이트
@@ -20,6 +21,7 @@ list() {
 예시:
   ai youtube "제주 2박3일 브이로그" -f 촬영본_자막.txt
   ai business "티셔츠 사업성 분석" -i ~/Desktop/티셔츠사진
+  ai meeting "100만 원 수익화 방안" --rounds 3
   DRY_RUN=1 ai travel "오사카 3박4일"   # AI 호출 없이 흐름만 점검
 USAGE
 }
@@ -35,6 +37,7 @@ case "$kind" in
     if command -v agy >/dev/null; then echo "✔ agy (Gemini)"
     elif command -v gemini >/dev/null; then echo "△ gemini (개인 구독은 막힘, agy 설치 권장)"
     else echo "✖ agy (Gemini, 설치 필요)"; fi ;;
+  meeting) exec node "$DIR/meeting/server.mjs" "$@" ;;
   notion) exec node "$DIR/lib/notion.mjs" setup ;;
   update)
     # git clone 으로 설치한 경우만 가능. 개인 파일(profile.md, notion.env, output)은 건드리지 않음

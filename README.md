@@ -16,6 +16,7 @@ ai youtube "제주 2박3일 브이로그"
 | `business` 사업기획 | Gemini 시장조사 | Claude 기획서 | GPT 투자심사역 반박 | Claude 보완 최종본 |
 | `travel` 여행 | Gemini 현지정보 | Claude 일정표 | GPT 현실성 점검 | Claude 최종본 + 체크리스트 |
 | `design` 디자인 | Claude 브리프 | GPT 아트디렉터 검토 | Claude 최종본 + 이미지 생성 프롬프트 | |
+| `meeting` 회의실 | AI 직원들이 돌아가며 토론 | 대표가 라운드마다 후보 정리 | 라운드 반복 | 대표 결론 보고서 |
 
 - **Gemini**: 최신 정보 검색과 조사
 - **Claude**: 긴 글 작성과 구조화
@@ -47,7 +48,7 @@ ai youtube "제주 2박3일 브이로그"
 ```bash
 ai update
 ```
-`profile.md`, `notion.env`, `output/`은 업데이트해도 그대로 남습니다.
+`profile.md`, `notion.env`, `meeting/roster.json`, `output/`은 업데이트해도 그대로 남습니다.
 
 ### 문제 해결: npm 설치 권한 오류 (Mac)
 ```bash
@@ -100,6 +101,29 @@ ai insta "토리네 홍보 릴스" -i 가게1.jpg 가게2.jpg
 ```bash
 cp profile.example.md profile.md
 ```
+
+## AI 회의실 (`meeting`)
+
+AI 직원 5명(대표·마케터·디자이너·개발자·과장)이 회의 테이블에 앉아 안건을 두고 돌아가며 토론합니다. 브라우저 화면에서 누가 말하는지, 후보안이 어떻게 걸러지는지 실시간으로 볼 수 있어요.
+
+```bash
+ai meeting                                   # 브라우저가 열리면 안건 입력 후 '회의 시작'
+ai meeting "100만 원 수익화 방안" --rounds 3   # 바로 시작
+ai meeting "신메뉴 정하기" -f 매출데이터.txt    # 참고자료 넣기
+```
+
+- 라운드마다 직원 4명이 앞사람 의견에 동의·반박하며 한 번씩 말하고, **대표가 후보 보드를 정리**합니다 (근거가 약한 안은 취소선).
+- 회의 중에 오른쪽 **대표 지시** 칸에 "강의류는 제외해"처럼 쓰면 다음 발언부터 반영됩니다.
+- 일시정지 / 중단 / 재생 속도 / JSON 내보내기를 지원합니다. 기록을 누르면 지난 발언을 다시 볼 수 있어요.
+- 결과는 `output/날짜_meeting_안건/`에 `1_회의록.md`, `2_결론.md`, `회의록.json`으로 저장되고, 노션 설정을 했으면 결론이 노션에도 올라갑니다.
+
+**직원 바꾸기**: `meeting/roster.example.json`을 `meeting/roster.json`으로 복사해서 이름·직책·성격(`persona`)·담당 AI(`claude` | `gpt` | `gemini`)·아바타 이모지를 바꾸세요. 인원도 늘리거나 줄일 수 있고, `chair`로 지정한 사람이 진행과 결론을 맡습니다.
+
+```bash
+cp meeting/roster.example.json meeting/roster.json
+```
+
+> 한 라운드에 AI를 (직원 수)번 부릅니다. 5명·2라운드면 약 11번이라 구독 사용량을 꽤 씁니다. `DRY_RUN=1 ai meeting` 으로 화면만 먼저 구경할 수 있어요.
 
 ## 노션 자동 저장 (선택)
 
